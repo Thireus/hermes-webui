@@ -38,9 +38,10 @@ def test_disabled_read_uses_active_profile_config(tmp_path, monkeypatch):
     assert result == {"skill-x", "skill-y"}
 
 
-def test_disabled_read_prefers_platform_disabled_webui(tmp_path, monkeypatch):
-    """When platform_disabled.webui exists, it takes precedence over the
-    global disabled list."""
+def test_disabled_read_unions_platform_and_global(tmp_path, monkeypatch):
+    """platform_disabled.webui ADDS to the global disabled list, the way
+    agent.skill_utils.get_disabled_skill_names does. Another platform's list
+    is not read here."""
     from api import routes
 
     config_path = tmp_path / "config.yaml"
@@ -56,8 +57,8 @@ def test_disabled_read_prefers_platform_disabled_webui(tmp_path, monkeypatch):
     monkeypatch.setattr("api.routes._get_config_path", lambda: config_path)
 
     result = routes._get_disabled_skill_names_for_profile()
-    assert result == {"webui-disabled-a", "webui-disabled-b"}
-    assert "global-disabled" not in result
+    assert result == {"global-disabled", "webui-disabled-a", "webui-disabled-b"}
+    assert "telegram-disabled" not in result
 
 
 def test_disabled_read_falls_back_to_global_disabled(tmp_path, monkeypatch):
@@ -179,7 +180,8 @@ def test_disabled_read_decodes_json_array_string(tmp_path, monkeypatch):
 
 def test_disabled_read_platform_webui_decodes_json_array_string(tmp_path, monkeypatch):
     """Issue #7120: platform_disabled.webui stored as a JSON-array string is
-    decoded the same way as the global disabled list."""
+    decoded the same way as the global disabled list, and both end up in the
+    union."""
     from api import routes
 
     config_path = tmp_path / "config.yaml"
@@ -192,8 +194,48 @@ def test_disabled_read_platform_webui_decodes_json_array_string(tmp_path, monkey
     monkeypatch.setattr("api.routes._get_config_path", lambda: config_path)
 
     result = routes._get_disabled_skill_names_for_profile()
-    assert result == {"webui-disabled-a", "webui-disabled-b"}
-    assert "global-disabled" not in result
+    assert result == {"global-disabled", "webui-disabled-a", "webui-disabled-b"}
+
+
+def test_disabled_read_subtracts_essential_skills(tmp_path, monkeypatch):
+    """An essential skill is never reported disabled, whatever the config says:
+    the agent loads it anyway, so showing it as disabled here would be a lie."""
+    from api import routes
+
+    config_path = tmp_path / "config.yaml"
+    _write_config(config_path, {
+        "skills": {
+            "disabled": ["hermes-agent", "skill-x"],
+            "platform_disabled": {"webui": ["hermes-agent", "skill-y"]},
+        }
+    })
+    monkeypatch.setattr("api.routes._get_config_path", lambda: config_path)
+    monkeypatch.setattr("api.routes._essential_skill_names", lambda: {"hermes-agent"})
+
+    result = routes._get_disabled_skill_names_for_profile()
+    assert result == {"skill-x", "skill-y"}
+
+
+def test_essential_skill_names_falls_back_without_agent_modules(monkeypatch):
+    """Not every deployment can import the agent package. The fallback keeps
+    the panel usable and still protects hermes-agent."""
+    import sys
+
+    from api import routes
+
+    monkeypatch.setitem(sys.modules, "agent.skill_utils", None)
+    assert routes._essential_skill_names() == {"hermes-agent"}
+
+
+@requires_agent_modules
+def test_essential_skill_names_reads_the_agent_set():
+    """When the agent package is importable, the set comes from it, so an
+    upstream change to ESSENTIAL_SKILLS moves this UI with it."""
+    from agent.skill_utils import ESSENTIAL_SKILLS
+
+    from api import routes
+
+    assert routes._essential_skill_names() == {str(n) for n in ESSENTIAL_SKILLS}
 
 
 @requires_agent_modules
