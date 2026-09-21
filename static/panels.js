@@ -4928,7 +4928,9 @@ function _appendSkillsPolicyNote(box, skills) {
   if (!off) return;
   const sum = document.createElement('div');
   sum.className = 'skills-policy-note';
-  sum.textContent = `${skills.length - off} enabled · ${off} disabled`;
+  /* The two words are the labels the panel already ships in every locale
+     (i18n keys skill_enabled / skill_disabled), so this line is not English-only. */
+  sum.textContent = `${skills.length - off} ${t('skill_enabled')} · ${off} ${t('skill_disabled')}`;
   box.appendChild(sum);
 }
 function _skillsCatCount(items) {

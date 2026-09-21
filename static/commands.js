@@ -1174,16 +1174,20 @@ function cmdSkills(args){
       let skills = data.skills || [];
       /* `skills.disabled` in the agent's config is the policy: list what it can actually load,
          and say how many are held back rather than offering them as if they were available. */
-      const offCount = skills.filter(s => s && s.disabled).length;
+      let offSkills = skills.filter(s => s && s.disabled);
       skills = skills.filter(s => !(s && s.disabled));
       if(args){
         const q = args.toLowerCase();
-        skills = skills.filter(s =>
+        const matchesQuery = s =>
           (s.name||'').toLowerCase().includes(q) ||
           (s.description||'').toLowerCase().includes(q) ||
-          (s.category||'').toLowerCase().includes(q)
-        );
+          (s.category||'').toLowerCase().includes(q);
+        skills = skills.filter(matchesQuery);
+        /* The held-back count is printed next to a filtered listing, so it answers the
+           same query: a profile-wide total there would read as "N more MATCHING skills". */
+        offSkills = offSkills.filter(matchesQuery);
       }
+      const offCount = offSkills.length;
       if(!skills.length){
         const none = offCount ? ` (${offCount} disabled in config)` : '';
         const msg = {role:'assistant', content: (args ? `No skills matching "${args}"` : 'No enabled skills found') + none + '.'};
