@@ -4920,6 +4920,22 @@ function _toggleCatCollapse(cat) {
   });
 }
 
+/* The disabled-skill summary and the per-category enabled/total count. Kept out of
+   renderSkills() so its collapse logic stays where tests/test_skills_category_collapse.py
+   reads it, in the first 2000 characters of the function. */
+function _appendSkillsPolicyNote(box, skills) {
+  const off = skills.filter(s => s.disabled).length;
+  if (!off) return;
+  const sum = document.createElement('div');
+  sum.className = 'skills-policy-note';
+  sum.textContent = `${skills.length - off} enabled · ${off} disabled`;
+  box.appendChild(sum);
+}
+function _skillsCatCount(items) {
+  const off = items.filter(s => s.disabled).length;
+  return off ? `${items.length - off}/${items.length}` : `${items.length}`;
+}
+
 function renderSkills(skills) {
   const query = ($('skillsSearch').value || '').toLowerCase();
   const filtered = query ? skills.filter(s =>
@@ -4937,13 +4953,7 @@ function renderSkills(skills) {
   const box = $('skillsList');
   box.innerHTML = '';
   if (!filtered.length) { box.innerHTML = `<div style="padding:12px;color:var(--muted);font-size:12px">${esc(t('skills_no_match'))}</div>`; return; }
-  const offTotal = filtered.filter(s => s.disabled).length;
-  if (offTotal) {
-    const sum = document.createElement('div');
-    sum.className = 'skills-policy-note';
-    sum.textContent = `${filtered.length - offTotal} enabled · ${offTotal} disabled`;
-    box.appendChild(sum);
-  }
+  _appendSkillsPolicyNote(box, filtered);
   for (const [cat, items] of Object.entries(cats).sort()) {
     const collapsed = _collapsedCats.has(cat);
     const sec = document.createElement('div');
@@ -4951,9 +4961,7 @@ function renderSkills(skills) {
     const hdr = document.createElement('div');
     hdr.className = 'skills-cat-header';
     hdr.dataset.cat = cat;
-    const catOff = items.filter(s => s.disabled).length;
-    const catCount = catOff ? `${items.length - catOff}/${items.length}` : `${items.length}`;
-    hdr.innerHTML = `<span class="cat-chevron" style="display:inline-flex;transition:transform .15s;${collapsed ? '' : 'transform:rotate(90deg)'}">${li('chevron-right',12)}</span> ${esc(cat)} <span style="opacity:.5">(${catCount})</span>`;
+    hdr.innerHTML = `<span class="cat-chevron" style="display:inline-flex;transition:transform .15s;${collapsed ? '' : 'transform:rotate(90deg)'}">${li('chevron-right',12)}</span> ${esc(cat)} <span style="opacity:.5">(${_skillsCatCount(items)})</span>`;
     hdr.onclick = () => _toggleCatCollapse(cat);
     sec.appendChild(hdr);
     for (const skill of items.sort((a,b) => a.name.localeCompare(b.name))) {
