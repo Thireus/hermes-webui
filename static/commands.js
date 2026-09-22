@@ -1212,7 +1212,7 @@ function cmdSkills(args){
       const header = args
         ? `Skills matching "${args}" (${skills.length}):\n\n`
         : `Available skills (${skills.length}):\n\n`;
-      const footer = offCount ? `\n_${offCount} more are disabled in this profile's config and cannot be used._` : '';
+      const footer = offCount ? `\n_${offCount} more ${offCount === 1 ? 'is' : 'are'} disabled in this profile's config and cannot be used._` : '';
       S.messages.push({role:'assistant', content: header + lines.join('\n') + footer});
       renderMessages();
       showToast(t('type_slash'));

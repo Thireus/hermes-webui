@@ -5015,9 +5015,12 @@ async function toggleSkill(name, currentlyEnabled) {
       body: JSON.stringify({ name, enabled: newEnabled })
     });
     if (result && result.ok) {
+      /* The server writes the effective state, which is not always the requested one: an
+         essential skill stays enabled however its row was clicked. Render what came back. */
+      const effective = typeof result.enabled === 'boolean' ? result.enabled : newEnabled;
       if (_skillsData) {
         const skill = _skillsData.find(s => s.name === name);
-        if (skill) skill.disabled = !newEnabled;
+        if (skill) skill.disabled = !effective;
       }
       if(typeof window!=='undefined'&&typeof window.invalidateSlashSkillCaches==='function') window.invalidateSlashSkillCaches();
       renderSkills(_skillsData || []);

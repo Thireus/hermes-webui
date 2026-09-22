@@ -28392,6 +28392,15 @@ def _handle_skill_toggle(handler, body):
     name = body["name"].strip()
     enabled = bool(body["enabled"])
 
+    # An essential skill cannot be disabled from any surface: the agent loads it whatever the
+    # config says, hermes_cli.skills_config.save_disabled_skills drops it on the way to disk,
+    # and _get_disabled_skill_names_for_profile() subtracts it on the way back. Writing the
+    # name here anyway left the config, this response and the panel all claiming a state the
+    # agent refuses to honour, so the write is turned into the effective one instead -- which
+    # also strips a name an earlier write left behind in either list.
+    if not enabled and name in _essential_skill_names():
+        enabled = True
+
     # Validate the skill exists in the filesystem
     skills_dir = _active_skills_dir()
     search_dirs = _active_skill_search_dirs(skills_dir)
@@ -28427,6 +28436,8 @@ def _handle_skill_toggle(handler, body):
 
     reload_config()  # outside with block — reload_config() acquires the lock itself
     _SKILLS_STATS_CACHE.clear()
+    # `enabled` is the state that was written, not the state that was asked for: they differ
+    # for an essential skill, and the caller needs the one that is now on disk.
     return j(handler, {"ok": True, "name": name, "enabled": enabled})
 
 

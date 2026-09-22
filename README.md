@@ -303,7 +303,7 @@ If an AI assistant is helping with install, reinstall, bootstrap, provider setup
 ### Panels
 - **Chat** -- session list, search, pin, archive, projects, new conversation
 - **Tasks** -- view, create, edit, run, pause/resume, delete cron jobs; run history; completion alerts
-- **Skills** -- list all skills by category, search, preview, create/edit/delete; linked files viewer; a disabled skill keeps its row and its toggle but is tagged as disabled, and the header counts enabled against total
+- **Skills** -- list all skills by category, search, preview, create/edit/delete; linked files viewer; a disabled skill keeps its row and its toggle but is tagged as disabled, and the header counts enabled against total; a skill the agent treats as essential cannot be turned off here and its row stays enabled
 - **Memory** -- view and edit MEMORY.md and USER.md inline
 - **Profiles** -- create, switch, delete agent profiles; clone config
 - **Todos** -- live task list from the current session
