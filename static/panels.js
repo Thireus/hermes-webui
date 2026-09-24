@@ -1893,7 +1893,6 @@ function _bindCronSkillPicker(){
     const q=search.value.trim().toLowerCase();
     if(!q||!_cronSkillsCache){dropdown.style.display='none';return;}
     const matches=_cronSkillsCache.filter(s=>
-      !s.disabled&&
       !_cronSelectedSkills.includes(s.name)&&
       (s.name.toLowerCase().includes(q)||(s.category||'').toLowerCase().includes(q))
     ).slice(0,8);
